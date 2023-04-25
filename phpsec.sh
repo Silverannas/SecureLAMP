@@ -57,10 +57,10 @@ if [[ $? -ne 0 ]]
 then	
 	echo "El parámetro open_basedir está activado."
 	echo ""
-	echo "Estado actual del parámetro en el fichero: "; grep "^;open_basedir.*=.*$" $fichphpReal
+	echo "Estado actual del parámetro en el fichero: "; grep "^open_basedir.*=.*$" $fichphpReal
 	echo ""
 else
-	read -p "El parámetro open_basedir está desactivado, desea activarlo? [s/n]: " answer
+	read -p "El parámetro open_basedir está desactivado, ¿desea activarlo? [s/n]: " answer
 	
 	if [[ $answer =~ [sS] ]]
 		then
@@ -75,4 +75,53 @@ else
 	fi			
 fi
 echo "_____________________________________________________________________________________________________________________________________________________________________________________"
+#4. disable_functions.
+echo -e "\e[1m4. Se va a revisar el parámetro disable_functions.\e[0m"
+
+funciones=( "phpinfo" "system" "exec" "shell_exec" "ini_set" "dl" "eval" )
+grep "^;disable_functions.*=.*$" $fichphpReal > /dev/null
+if [[ $? -ne 0 ]]
+then	
+	echo "El parámetro disable_functions está activado."
+	echo ""
+	echo "Estado actual del parámetro en el fichero: "; grep "^disable_functions.*=.*" $fichphpReal
+	echo ""
+	echo "Se recomienda deshabilitar las siguientes funciones: ${funciones[@]}"
+else
+	echo "El parámetro disable_functions está desactivado. Le recomendamos deshabilitar algunas funciones, a continuación: "
+	read -p "Desea activarlo? [s/n]: " addfunct
+	while [[ $addfunct != s ]] && [[ $addfunct != n ]];
+	do
+		read -p "Introduzca una opción correcta [s/n]: " addfunct
+	done
+	if [[ "$addfunct"  =~ [sS] ]]
+	then
+		sed -i "s/^;disable_functions.*=.*/disable_functions = /" $fichphpReal
+		#echo "Estado actual del parámetro en el fichero: "; grep "^disable_functions.*=.*" $fichphpReal
+		for funcion in "${funciones[@]}"
+		do
+			read -p "Desea añadir la función $funcion? [s/n]: " addfunct
+			while [[ $addfunct != s ]] && [[ $addfunct != n ]];
+			do
+				read -p "Introduzca una opción correcta [s/n]: " addfunct
+			done
+			if [[ "$addfunct"  =~ [sS] ]]
+			then
+				linea=$(grep "^disable_functions.*=.*" $fichphpReal)
+				addline="$linea, $funcion"
+				sed -i "s#^disable_functions.*=.*#${addline}#" $fichphpReal
+			else
+				echo "De acuerdo, se omitirá $funcion y se pasará a la siguiente función."
+			fi
+		done
+		echo "Se han añadido correctamente las funciones que deben estar deshabilitadas."
+		echo "Estado actual del parámetro en el fichero: "; grep "^disable_functions.*=.*$" $fichphpReal
+	else
+		echo "De acuerdo, el parámetro se quedará desactivado"
+	fi	
+	
+	
+fi
+echo "_____________________________________________________________________________________________________________________________________________________________________________________"
+
 exit 0
