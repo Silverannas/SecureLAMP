@@ -108,7 +108,7 @@ else
 			if [[ "$addfunct"  =~ [sS] ]]
 			then
 				linea=$(grep "^disable_functions.*=.*" $fichphpReal)
-				addline="$linea, $funcion"
+				addline="$linea $funcion,"
 				sed -i "s#^disable_functions.*=.*#${addline}#" $fichphpReal
 			else
 				echo "De acuerdo, se omitirá $funcion y se pasará a la siguiente función."
@@ -124,4 +124,36 @@ else
 fi
 echo "_____________________________________________________________________________________________________________________________________________________________________________________"
 
+#5.Remote File Inclusion.
+echo -e "\e[1m5. Se van a revisar los parámetros necesarios para evitar los archivos alojados en servidores externos.\e[0m"
+echo
+echo "Primero revisaremos el estado de allow_url_fopen"
+grep "allow_url_fopen.*=.*Off" $fichphpReal
+if [[ $? -ne 0 ]]
+then	
+	echo "El parámetro allow_url_fopen está activado (On) por lo que a continuación la desactivaremos."; grep "^allow_url_fopen.*=.*$" $fichphpReal
+	echo "A continuación se va a desactivar por su seguridad."
+	sed -i 's/^allow_url_fopen.*=.*On$/allow_url_fopen = Off/' $fichphpReal
+	echo ""
+	echo "Se ha modificado el archivo de configuración de php.ini desactivando el parámetro de allow_url_fopen"; grep "^allow_url_fopen.*=.*$" $fichphpReal
+	echo
+else
+	echo "El parámetro allow_url_fopen está desactivado (Off) en el archivo de configuración php.ini, ¡buen trabajo!"
+	echo
+fi
+echo
+echo "Ahora comprobaremos el estado del parámetro allow_url_include"
+grep "allow_url_include.*=.*Off" $fichphpReal
+if [[ $? -ne 0 ]]
+then	
+	echo "El parámetro allow_url_include está activado (On) por lo que a continuación lo desactivaremos."; grep "^allow_url_include.*=.*$" $fichphpReal
+	echo "A continuación se va a desactivar por su seguridad."
+	sed -i 's/^allow_url_include.*=.*On$/allow_url_include = Off/' $fichphpReal
+	echo ""
+	echo "Se ha modificado el archivo de configuración de php.ini desactivando el parámetro de allow_url_include"; grep "^allow_url_include.*=.*$" $fichphpReal
+	echo
+else
+	echo "El parámetro allow_url_include está desactivado (Off) en el archivo de configuración php.ini, ¡buen trabajo!"
+fi
+echo "_____________________________________________________________________________________________________________________________________________________________________________________"
 exit 0
