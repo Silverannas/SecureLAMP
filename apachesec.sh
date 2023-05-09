@@ -71,4 +71,28 @@ then
 else
 	echo "Le recomendamos que sustituya el usuario configurado actualmente por www-data."	
 fi
-exit 0
+#2. Deshabilitar módulos innecesarios.
+echo -e "\e[1m2. A continuación vamos a deshabilitar módulos innecesarios.\e[0m"
+echo "Se van a mostrar los módulos habilitados en apache: "
+sudo apachectl -M
+sudo apachectl -M | grep "^.*autoindex.*"
+if [[ $? -eq 0 ]]
+	then
+		read -p "El módulo autoindex está activado, ¿desea desactivarlo? [S/N] " answer
+		if [[ $answer =~ [sS] ]]
+		then
+			echo "Se va a desactivar el módulo autoindex"
+			echo "Yes, do as I say!" | sudo a2dismod autoindex
+		read -p "Para efectuar los cambios realizados, tendrá que reiniciar el servicio de apache, ¿desea hacerlo ahora? [S/N]" answer2
+			if [[ $answer2 =~ [sS] ]]
+			then
+				echo "Se va a reiniciar el servicio."
+				service apache2 restart
+			else
+				echo "No se reiniciará el servicio."
+			fi
+		fi
+		else
+			echo "El módulo se mantendrá activado."
+	fi		
+exit 
