@@ -13,11 +13,15 @@ fichapaReal="/etc/apache2/apache2.conf"
 fichapaPrueba="sandbox/apache2.conf"
 fichapa2Real="/etc/apache2/envvars"
 fichapa2Prueba="sandbox/envvars"
+fichapa3Real="/etc/apache2/conf-available/security.conf"
+fichapa3Prueba="sandbox/security.conf"
 
 fichapaReal=$fichapaPrueba
 fichapa2Real=$fichapa2Prueba
+fichapa3Real=$fichapa3Prueba
 #1. Usuario y grupo de ejecución.
 echo -e "\e[1m1. Se va a revisar el parámetro de usuario de ejecución.\e[0m"
+echo
 grep "^User.*\$.*" $fichapaReal
 if [[ $? -eq 0 ]]
 then
@@ -71,8 +75,10 @@ then
 else
 	echo "Le recomendamos que sustituya el usuario configurado actualmente por www-data."	
 fi
+echo "_____________________________________________________________________________________________________________________________________________________________________________________"
 #2. Deshabilitar módulos innecesarios.
 echo -e "\e[1m2. A continuación vamos a deshabilitar módulos innecesarios.\e[0m"
+echo
 echo "Se van a mostrar los módulos habilitados en apache: "
 sudo apachectl -M
 sudo apachectl -M | grep "^.*autoindex.*"
@@ -94,5 +100,51 @@ if [[ $? -eq 0 ]]
 		fi
 		else
 			echo "El módulo se mantendrá activado."
-	fi		
+	fi	
+echo "_____________________________________________________________________________________________________________________________________________________________________________________"
+#3. Ocultar información del servidor.
+echo -e "\e[1m2. Ahora vamos a deshabilitar algunos parámetros para evitar mostrar información sensible.\e[0m"
+echo ""
+grep "^ServerTokens.*OS" $fichapa3Real
+#Se han realizado cambios=1, no se han realizado cambios=0
+cambios=0
+if [[ $? -eq 0 ]]
+then	
+	echo "El parámetro Server Tokens está activado (OS), esto es peligroso para la seguridad de nuestro LAMP por lo que a continuación la desactivaremos."
+	echo ""
+	grep "^ServerTokens.*" $fichapa3Real >null
+	sed -i 's/^ServerTokens.*OS$/ServerTokens ProductOnly/' $fichapa3Real
+	cambios=1
+	echo ""
+	echo "Se ha modificado el archivo de configuración de seguridad desactivando el parámetro ServerTokens"
+	echo ""
+else
+	echo "El parámetro ServerTokens está desactivado (ProductOnly) en el archivo de configuración seguridad, ¡buen trabajo!"
+fi
+grep "^ServerSignature.*On" $fichapa3Real
+if [[ $? -eq 0 ]]
+then	
+	echo "El parámetro Server Signature está activado (On), esto es peligroso para la seguridad de nuestro LAMP por lo que a continuación la desactivaremos."
+	echo ""
+	grep "^ServerSignature.*" $fichapa3Real >null
+	sed -i 's/^ServerSignature.*On$/ServerSignature Off/' $fichapa3Real
+	cambios=1
+	echo ""
+	echo "Se ha modificado el archivo de configuración de seguridad desactivando el parámetro ServerSignature"
+	echo ""
+else
+	echo "El parámetro ServerSignature está desactivado (ProductOnly) en el archivo de configuración seguridad, ¡buen trabajo!"
+fi
+if [[ $cambios -eq 1 ]]
+then
+	read -p "Para efectuar los cambios realizados, tendrá que reiniciar el servicio de apache, ¿desea hacerlo ahora? [S/N]" answer2
+	if [[ $answer2 =~ [sS] ]]
+	then
+		echo "Se va a reiniciar el servicio."
+		service apache2 restart
+	else
+		echo "Los cambios no serán efectivos hasta que reinicie el servicio de apache."
+	fi
+fi
+echo "_____________________________________________________________________________________________________________________________________________________________________________________"
 exit 
